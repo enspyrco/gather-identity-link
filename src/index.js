@@ -12,7 +12,9 @@ import {
   btnLogout
 } from './ui'
 
-import { initializeApp } from 'firebase/app';
+import { config } from './config'
+import { getApps, initializeApp } from 'firebase/app';
+
 import { 
   getAuth,
   onAuthStateChanged, 
@@ -22,20 +24,34 @@ import {
   connectAuthEmulator
 } from 'firebase/auth';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBUdxGEMisEGRdDrIl0L7tD1AfiiSi0PC0",
-  authDomain: "gather-identity-link.firebaseapp.com",
-  projectId: "gather-identity-link",
-  storageBucket: "gather-identity-link.appspot.com",
-  messagingSenderId: "865555838574",
-  appId: "1:865555838574:web:06f5aba18dfda488ee187f"
-};
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
+function initializeServices() {
+  const isConfigured = getApps().length > 0;
+  const firebaseApp = initializeApp(config.firebase);
+  const firestore = getFirestore(firebaseApp)
+  const auth = getAuth(firebaseApp);
+  return { firebaseApp, firestore, auth, isConfigured };
+}
 
-// Login using email/password
+function connectToEmulators({auth, firestore}) {
+  if(location.hostname === 'localhost') {
+    connectFirestoreEmulator(firestore, 'localhost', 8081);
+    connectAuthEmulator(auth, 'http://localhost:9099');
+  }
+}
+
+function getFirebase() {
+  const services = initializeServices();
+  if(!services.isConfigured) {
+    connectToEmulators(services);
+  }
+  return services;
+}
+
 const loginEmailPassword = async () => {
+  const { auth } = getFirebase();
+
   const loginEmail = txtEmail.value
   const loginPassword = txtPassword.value
 
@@ -48,8 +64,9 @@ const loginEmailPassword = async () => {
   }
 }
 
-// Create new account using email/password
-const createAccount = async () => {
+const signupEmailPassword = async () => {
+  const { auth } = getFirebase();
+
   const email = txtEmail.value
   const password = txtPassword.value
 
@@ -64,6 +81,8 @@ const createAccount = async () => {
 
 // Monitor auth state
 const monitorAuthState = async () => {
+  const { auth } = getFirebase();
+
   onAuthStateChanged(auth, user => {
     if (user) {
       console.log(user)
@@ -97,16 +116,15 @@ const linkGitHub = async () => {
 
 // Log out
 const logout = async () => {
+  const { auth } = getFirebase();
+  
   await signOut(auth);
 }
 
-btnLogin.addEventListener("click", loginEmailPassword) 
-btnSignup.addEventListener("click", createAccount)
+btnLogin.addEventListener("click", loginEmailPassword)
+btnSignup.addEventListener("click", signupEmailPassword)
 btnLinkGather.addEventListener("click", linkGather)
 btnLinkGitHub.addEventListener("click", linkGitHub)
 btnLogout.addEventListener("click", logout)
-
-const auth = getAuth(firebaseApp);
-// connectAuthEmulator(auth, "http://localhost:9099");
 
 monitorAuthState();
