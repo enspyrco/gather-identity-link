@@ -24,7 +24,7 @@ import {
   connectAuthEmulator
 } from 'firebase/auth';
 
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, onSnapshot, doc, setDoc } from 'firebase/firestore';
 
 function initializeServices() {
   const isConfigured = getApps().length > 0;
@@ -79,9 +79,8 @@ const signupEmailPassword = async () => {
   } 
 }
 
-// Monitor auth state
 const monitorAuthState = async () => {
-  const { auth } = getFirebase();
+  const { auth, firestore } = getFirebase();
 
   onAuthStateChanged(auth, user => {
     if (user) {
@@ -89,19 +88,34 @@ const monitorAuthState = async () => {
       showApp()
       showLoginState(user)
 
-      const queryString = window.location.search;
-      const urlParams = new URLSearchParams(queryString);
+      streamLinkedState(user.uid);
+
+      const urlParams = new URLSearchParams(window.location.search);
       const gatherId = urlParams.get('gatherPlayerId')
-      console.log(`Gather Id: ${gatherId}`);
+      const githubCode = urlParams.get('code')
+      if(gatherId) {
+        setDoc(doc(firestore, 'users', user.uid), { gather: gatherId });
+      }
+      if(githubCode) {
+        
+      }
 
       hideLoginError()
-      hideLinkError()
+      // hideLinkError()
     }
     else {
       showLoginForm()
       lblAuthState.innerHTML = `You're not logged in.`
     }
   })
+}
+
+const streamLinkedState = async (uid) => {
+  const {firestore} = getFirebase();
+
+  const unsub = onSnapshot(doc(firestore, 'users', uid), (doc) => {
+    if(doc.exists) console.log("Current data: ", doc.data());
+  });
 }
 
 const linkGather = async () => {
@@ -111,20 +125,19 @@ const linkGather = async () => {
 }
 
 const linkGitHub = async () => {
-  window.open('http://www.github.com');
+  window.open('https://github.com/login/oauth/authorize?client_id=3b2457d371c7b9b4a1b8');
 }
 
-// Log out
 const logout = async () => {
   const { auth } = getFirebase();
-  
+
   await signOut(auth);
 }
 
-btnLogin.addEventListener("click", loginEmailPassword)
-btnSignup.addEventListener("click", signupEmailPassword)
-btnLinkGather.addEventListener("click", linkGather)
-btnLinkGitHub.addEventListener("click", linkGitHub)
-btnLogout.addEventListener("click", logout)
+btnLogin.addEventListener('click', loginEmailPassword)
+btnSignup.addEventListener('click', signupEmailPassword)
+btnLinkGather.addEventListener('click', linkGather)
+btnLinkGitHub.addEventListener('click', linkGitHub)
+btnLogout.addEventListener('click', logout)
 
 monitorAuthState();
