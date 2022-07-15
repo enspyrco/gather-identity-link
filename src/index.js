@@ -120,7 +120,7 @@ const streamLinkedState = async (uid) => {
 
 const linkGather = async () => {
   const nonce = 12345;
-  const redirect = encodeURIComponent(`https://gather-identity-link.web.app?nonce=${nonce}&`);
+  const redirect = encodeURIComponent(`https://gather-link-account-shelf-eogj3aa7na-uc.a.run.app/gather/?nonce=${nonce}&`);
   window.open(`https://gather.town/getPublicId?redirectTo=${redirect}`);
 }
 

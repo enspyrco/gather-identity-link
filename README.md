@@ -12,7 +12,7 @@ Quick Start:
 
 ```sh
 npx webpack
-firebase: emulators:start
+firebase emulators:start
 ```
 
 Navigate to <http://localhost:5001>
