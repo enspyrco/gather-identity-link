@@ -67,3 +67,6 @@ node_modules/
 
 # the dist folder is generated with `npx webpack`
 dist/
+
+# firebase config
+src/config.js
